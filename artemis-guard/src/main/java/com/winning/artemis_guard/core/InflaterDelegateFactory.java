@@ -9,12 +9,14 @@ import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * inject view create
  * Created by yuzhijun on 2018/3/28.
  */
 public class InflaterDelegateFactory implements LayoutInflaterFactory {
+    private ConcurrentHashMap<AppCompatActivity,MarkViewGroup> mConcurrentHashMap;
     private ArtemisActivityLifecycle mArtemisActivityLifecycle;
     private final AppCompatActivity mAppCompatActivity;
     private LayoutInflater mLayoutInflater;
@@ -28,10 +30,10 @@ public class InflaterDelegateFactory implements LayoutInflaterFactory {
         this.mArtemisActivityLifecycle = artemisActivityLifecycle;
         this.mAppCompatActivity = appCompatActivity;
         this.mLayoutInflater = appCompatActivity.getLayoutInflater();
+        this.mConcurrentHashMap = new ConcurrentHashMap<>();
     }
     @Override
     public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
-        MarkViewGroup markViewGroup = null;
         View view = null;
         if (view == null) {
             view = createViewOrFailQuietly(name,context,attrs);
@@ -47,12 +49,15 @@ public class InflaterDelegateFactory implements LayoutInflaterFactory {
             mArtemisActivityLifecycle.getViewHashMap().put(mAppCompatActivity, mViews);
 
             if (mViews.size() == 1){
-                markViewGroup = new MarkViewGroup(mAppCompatActivity);
+                MarkViewGroup markViewGroup = new MarkViewGroup(mAppCompatActivity);
                 markViewGroup.addView(view);
+                mConcurrentHashMap.put(mAppCompatActivity, markViewGroup);
+
+                return markViewGroup;
             }
         }
 
-        return null == markViewGroup ? view : markViewGroup;
+        return  view;
     }
 
     private View createViewOrFailQuietly(String name, Context context, AttributeSet attrs) {
@@ -81,5 +86,9 @@ public class InflaterDelegateFactory implements LayoutInflaterFactory {
 
     public static InflaterDelegateFactory create(ArtemisActivityLifecycle artemisActivityLifecycle, AppCompatActivity appCompatActivity) {
         return new InflaterDelegateFactory(artemisActivityLifecycle,appCompatActivity);
+    }
+
+    public ConcurrentHashMap<AppCompatActivity, MarkViewGroup> getConcurrentHashMap() {
+        return mConcurrentHashMap;
     }
 }

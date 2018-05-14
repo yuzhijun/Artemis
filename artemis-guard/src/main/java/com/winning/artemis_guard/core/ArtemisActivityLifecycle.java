@@ -6,22 +6,29 @@ import android.os.Bundle;
 import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Queue;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCallbacks,IDisposable {
     private static volatile ArtemisActivityLifecycle sInstance = null;
+    private InflaterDelegateFactory inflaterDelegateFactory;
+    //record operate path
+    private Queue<ConcurrentHashMap<AppCompatActivity,List<MotionEvent>>> mMapQueue;
     private WeakHashMap<Activity, InflaterDelegateFactory> mInflaterDelegateMap;
     private ConcurrentHashMap<AppCompatActivity,List<View>> mViewHashMap;
     private Application mApplication;
 
-    public ArtemisActivityLifecycle(Application application) {
+    private ArtemisActivityLifecycle(Application application) {
         mApplication = application;
         mViewHashMap = new ConcurrentHashMap<>();
+        mMapQueue = new ConcurrentLinkedQueue<>();
         application.registerActivityLifecycleCallbacks(this);
     }
 
@@ -44,7 +51,8 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
                 Field field = LayoutInflater.class.getDeclaredField("mFactorySet");
                 field.setAccessible(true);
                 field.setBoolean(layoutInflater, false);
-                LayoutInflaterCompat.setFactory(activity.getLayoutInflater(), getInflaterDelegate(ArtemisActivityLifecycle.this,(AppCompatActivity) activity));
+                inflaterDelegateFactory = getInflaterDelegate(ArtemisActivityLifecycle.this,(AppCompatActivity) activity);
+                LayoutInflaterCompat.setFactory(activity.getLayoutInflater(), inflaterDelegateFactory);
             } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
                 e.printStackTrace();
             }
@@ -58,7 +66,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
 
     @Override
     public void onActivityResumed(Activity activity) {
-
+        recordOperatePath(activity);
     }
 
     @Override
@@ -94,6 +102,21 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         return mInflaterDelegate;
     }
 
+    private void recordOperatePath(Activity activity) {
+        if (null != inflaterDelegateFactory){
+            ConcurrentHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = inflaterDelegateFactory.getConcurrentHashMap();
+            if (null != markViewGroupHashMap && markViewGroupHashMap.size() > 0){
+                MarkViewGroup markViewGroup = markViewGroupHashMap.get(activity);
+                if (null != markViewGroup){
+                    ConcurrentHashMap<AppCompatActivity,List<MotionEvent>> motionEvents = markViewGroup.getMotionEvents();
+                    if (null != motionEvents && motionEvents.size() > 0){
+                        mMapQueue.offer(motionEvents);
+                    }
+                }
+            }
+        }
+    }
+
     public ConcurrentHashMap<AppCompatActivity, List<View>> getViewHashMap() {
         return mViewHashMap;
     }
@@ -103,5 +126,6 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         mApplication.unregisterActivityLifecycleCallbacks(sInstance);
         sInstance = null;
         mInflaterDelegateMap = null;
+        mMapQueue = null;
     }
 }
