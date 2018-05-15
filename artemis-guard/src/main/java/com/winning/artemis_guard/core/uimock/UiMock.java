@@ -1,11 +1,12 @@
 package com.winning.artemis_guard.core.uimock;
 
 import android.app.Instrumentation;
-import android.content.Intent;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 
 import com.winning.artemis_guard.core.OperatePath;
+import com.winning.artemis_guard.model.TouchEvent;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,49 +34,54 @@ public class UiMock {
     }
 
     public void mock(){
-        Queue<LinkedHashMap<AppCompatActivity,List<MotionEvent>>> mMapQueue = OperatePath.getInstance().getMapQueue();
+        final Queue<LinkedHashMap<AppCompatActivity,List<TouchEvent>>> mMapQueue = OperatePath.getInstance().getMapQueue();
         if (null != mMapQueue && mMapQueue.size() > 0){
-            uiMock(mMapQueue);
-        }
-    }
-
-    private void uiMock(final Queue<LinkedHashMap<AppCompatActivity, List<MotionEvent>>> mMapQueue) {
-        if (null == mMapQueue) {
-            return;
-        }
-
-        final LinkedHashMap<AppCompatActivity,List<MotionEvent>> mockHashMap = mMapQueue.poll();
-
-        Set<Map.Entry<AppCompatActivity,List<MotionEvent>>> entrySet = mockHashMap.entrySet();
-        for (Map.Entry<AppCompatActivity,List<MotionEvent>> entry : entrySet){
-            final AppCompatActivity appCompatActivity = entry.getKey();
-            final List<MotionEvent> motionEvents = entry.getValue();
-
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    handleEvent(appCompatActivity,motionEvents);
-
                     uiMock(mMapQueue);
                 }
             }).start();
         }
     }
 
-    private void handleEvent(AppCompatActivity appCompatActivity,List<MotionEvent> motionEvents) {
-        //turn off touch mode
-        mInstrumentation.setInTouchMode(false);
+    private void uiMock(final Queue<LinkedHashMap<AppCompatActivity, List<TouchEvent>>> mMapQueue) {
+        if (null == mMapQueue || mMapQueue.isEmpty()) {
+            return;
+        }
 
-        //start activity
-        Intent intent = new Intent();
-        intent.setClassName(appCompatActivity.getPackageName(),appCompatActivity.getClass().getName());
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        mInstrumentation.startActivitySync(intent);
-        mInstrumentation.waitForIdleSync();
+        final LinkedHashMap<AppCompatActivity,List<TouchEvent>> mockHashMap = mMapQueue.poll();
+        Set<Map.Entry<AppCompatActivity,List<TouchEvent>>> entrySet = mockHashMap.entrySet();
 
-        //mock ui handle event
-        for (MotionEvent motionEvent : motionEvents){
-            mInstrumentation.sendPointerSync(motionEvent);
+        for (Map.Entry<AppCompatActivity,List<TouchEvent>> entry : entrySet){
+            final AppCompatActivity appCompatActivity = entry.getKey();
+            final List<TouchEvent> motionEvents = entry.getValue();
+
+            handleEvent(appCompatActivity,motionEvents);
+            uiMock(mMapQueue);
+        }
+    }
+
+    private void handleEvent(AppCompatActivity appCompatActivity,List<TouchEvent> motionEvents) {
+        boolean successfull = false;
+        int retry = 0;
+
+        while (!successfull && retry < 20){
+            //mock ui handle event
+            for (TouchEvent motionEvent : motionEvents){
+                long downTime = SystemClock.uptimeMillis();
+                long eventTime = SystemClock.uptimeMillis();
+                MotionEvent event = MotionEvent.obtain(downTime, eventTime,
+                       motionEvent.getACTION_EVENT(), motionEvent.getX(), motionEvent.getY(), 0);
+
+                try{
+                    mInstrumentation.sendPointerSync(event);
+                }catch (SecurityException e){
+                    retry ++;
+                }
+            }
+
+            successfull = true;
         }
     }
 }

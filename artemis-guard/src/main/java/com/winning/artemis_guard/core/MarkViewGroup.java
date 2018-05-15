@@ -8,13 +8,15 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
+import com.winning.artemis_guard.model.TouchEvent;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 public class MarkViewGroup extends FrameLayout {
-    private LinkedHashMap<AppCompatActivity,List<MotionEvent>> mMotionEvents;
+    private LinkedHashMap<AppCompatActivity,List<TouchEvent>> mMotionEvents;
     private WeakReference<AppCompatActivity> mWeakReference;
 
     public MarkViewGroup(@NonNull Context context) {
@@ -46,17 +48,17 @@ public class MarkViewGroup extends FrameLayout {
             mMotionEvents = new LinkedHashMap<>();
         }
 
-        List<MotionEvent> motionEvents = mMotionEvents.get(context);
+        List<TouchEvent> motionEvents = mMotionEvents.get(context);
         if (null == motionEvents){
            motionEvents = new ArrayList<>();
         }
-        motionEvents.add(event);
+        motionEvents.add(new TouchEvent(event.getX(),event.getY(),event.getAction()));
         mMotionEvents.put(context,motionEvents);
 
         OperatePath.getInstance().getConcurrentHashMap().put(context, this);
     }
 
-    public LinkedHashMap<AppCompatActivity, List<MotionEvent>> getMotionEvents() {
+    public LinkedHashMap<AppCompatActivity, List<TouchEvent>> getMotionEvents() {
         return mMotionEvents;
     }
 }

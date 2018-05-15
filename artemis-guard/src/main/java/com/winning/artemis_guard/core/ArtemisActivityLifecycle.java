@@ -6,12 +6,16 @@ import android.os.Bundle;
 import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 
+import com.winning.artemis_guard.model.TouchEvent;
+
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -104,7 +108,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
             if (null != markViewGroupHashMap && markViewGroupHashMap.size() > 0){
                 MarkViewGroup markViewGroup = markViewGroupHashMap.get(activity);
                 if (null != markViewGroup){
-                    LinkedHashMap<AppCompatActivity,List<MotionEvent>> motionEvents = markViewGroup.getMotionEvents();
+                    LinkedHashMap<AppCompatActivity,List<TouchEvent>> motionEvents = markViewGroup.getMotionEvents();
                     if (null != motionEvents && motionEvents.size() > 0){
                         OperatePath.getInstance().getMapQueue().offer(motionEvents);
                     }
@@ -121,5 +125,26 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         mApplication.unregisterActivityLifecycleCallbacks(sInstance);
         sInstance = null;
         mInflaterDelegateMap = null;
+    }
+
+    /**
+     * Parse the activity parameters.
+     * @param activity activity
+     * @return HashMap
+     */
+    private static Map<String, Object> parseIntent(Activity activity){
+        Map<String, Object> hashMap = new HashMap<>();
+        if (activity == null)return hashMap;
+        android.content.Intent intent = activity.getIntent();
+        if (intent != null) {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                Set<String> stringSet = bundle.keySet();
+                for(String s: stringSet){
+                    hashMap.put(s, bundle.get(s));
+                }
+            }
+        }
+        return hashMap;
     }
 }
