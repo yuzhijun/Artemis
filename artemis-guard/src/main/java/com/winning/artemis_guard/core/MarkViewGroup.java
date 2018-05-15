@@ -10,11 +10,11 @@ import android.widget.FrameLayout;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class MarkViewGroup extends FrameLayout {
-    private ConcurrentHashMap<AppCompatActivity,List<MotionEvent>> mMotionEvents;
+    private LinkedHashMap<AppCompatActivity,List<MotionEvent>> mMotionEvents;
     private WeakReference<AppCompatActivity> mWeakReference;
 
     public MarkViewGroup(@NonNull Context context) {
@@ -28,7 +28,7 @@ public class MarkViewGroup extends FrameLayout {
     public MarkViewGroup(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         this.mWeakReference = new WeakReference<>((AppCompatActivity) context);
-        mMotionEvents = new ConcurrentHashMap<>();
+        mMotionEvents = new LinkedHashMap<>();
     }
 
     @Override
@@ -43,7 +43,7 @@ public class MarkViewGroup extends FrameLayout {
         }
 
         if (null == mMotionEvents){
-            mMotionEvents = new ConcurrentHashMap<>();
+            mMotionEvents = new LinkedHashMap<>();
         }
 
         List<MotionEvent> motionEvents = mMotionEvents.get(context);
@@ -52,9 +52,11 @@ public class MarkViewGroup extends FrameLayout {
         }
         motionEvents.add(event);
         mMotionEvents.put(context,motionEvents);
+
+        OperatePath.getInstance().getConcurrentHashMap().put(context, this);
     }
 
-    public ConcurrentHashMap<AppCompatActivity, List<MotionEvent>> getMotionEvents() {
+    public LinkedHashMap<AppCompatActivity, List<MotionEvent>> getMotionEvents() {
         return mMotionEvents;
     }
 }

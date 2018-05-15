@@ -10,17 +10,15 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Queue;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCallbacks,IDisposable {
     private static volatile ArtemisActivityLifecycle sInstance = null;
     private InflaterDelegateFactory inflaterDelegateFactory;
-    //record operate path
-    private Queue<ConcurrentHashMap<AppCompatActivity,List<MotionEvent>>> mMapQueue;
+
     private WeakHashMap<Activity, InflaterDelegateFactory> mInflaterDelegateMap;
     private ConcurrentHashMap<AppCompatActivity,List<View>> mViewHashMap;
     private Application mApplication;
@@ -28,7 +26,6 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
     private ArtemisActivityLifecycle(Application application) {
         mApplication = application;
         mViewHashMap = new ConcurrentHashMap<>();
-        mMapQueue = new ConcurrentLinkedQueue<>();
         application.registerActivityLifecycleCallbacks(this);
     }
 
@@ -66,12 +63,12 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
 
     @Override
     public void onActivityResumed(Activity activity) {
-        recordOperatePath(activity);
+
     }
 
     @Override
     public void onActivityPaused(Activity activity) {
-
+        recordOperatePath(activity);
     }
 
     @Override
@@ -103,18 +100,16 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
     }
 
     private void recordOperatePath(Activity activity) {
-        if (null != inflaterDelegateFactory){
-            ConcurrentHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = inflaterDelegateFactory.getConcurrentHashMap();
+        ConcurrentHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = OperatePath.getInstance().getConcurrentHashMap();
             if (null != markViewGroupHashMap && markViewGroupHashMap.size() > 0){
                 MarkViewGroup markViewGroup = markViewGroupHashMap.get(activity);
                 if (null != markViewGroup){
-                    ConcurrentHashMap<AppCompatActivity,List<MotionEvent>> motionEvents = markViewGroup.getMotionEvents();
+                    LinkedHashMap<AppCompatActivity,List<MotionEvent>> motionEvents = markViewGroup.getMotionEvents();
                     if (null != motionEvents && motionEvents.size() > 0){
-                        mMapQueue.offer(motionEvents);
+                        OperatePath.getInstance().getMapQueue().offer(motionEvents);
                     }
                 }
             }
-        }
     }
 
     public ConcurrentHashMap<AppCompatActivity, List<View>> getViewHashMap() {
@@ -126,6 +121,5 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         mApplication.unregisterActivityLifecycleCallbacks(sInstance);
         sInstance = null;
         mInflaterDelegateMap = null;
-        mMapQueue = null;
     }
 }
