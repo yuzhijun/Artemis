@@ -100,7 +100,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
     }
 
     private void recordOperatePath(Activity activity) {
-        ConcurrentHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = OperatePath.getInstance().getConcurrentHashMap();
+        LinkedHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = OperatePath.getInstance().getConcurrentHashMap();
             if (null != markViewGroupHashMap && markViewGroupHashMap.size() > 0){
                 MarkViewGroup markViewGroup = markViewGroupHashMap.get(activity);
                 if (null != markViewGroup){
