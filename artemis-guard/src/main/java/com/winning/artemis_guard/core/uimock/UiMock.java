@@ -1,7 +1,6 @@
 package com.winning.artemis_guard.core.uimock;
 
 import android.app.Instrumentation;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 
@@ -58,6 +57,7 @@ public class UiMock {
             final List<TouchEvent> motionEvents = entry.getValue();
 
             handleEvent(appCompatActivity,motionEvents);
+
             uiMock(mMapQueue);
         }
     }
@@ -69,9 +69,7 @@ public class UiMock {
         while (!successfull && retry < 20){
             //mock ui handle event
             for (TouchEvent motionEvent : motionEvents){
-                long downTime = SystemClock.uptimeMillis();
-                long eventTime = SystemClock.uptimeMillis();
-                MotionEvent event = MotionEvent.obtain(downTime, eventTime,
+                MotionEvent event = MotionEvent.obtain(motionEvent.getDownTime(), motionEvent.getEventTime(),
                        motionEvent.getACTION_EVENT(), motionEvent.getX(), motionEvent.getY(), 0);
 
                 try{

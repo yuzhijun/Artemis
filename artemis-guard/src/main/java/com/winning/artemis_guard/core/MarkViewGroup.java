@@ -39,7 +39,8 @@ public class MarkViewGroup extends FrameLayout {
         return super.dispatchTouchEvent(ev);
     }
 
-    private void handleMotionEvent(AppCompatActivity context,MotionEvent event){
+
+    private void handleMotionEvent(AppCompatActivity context, MotionEvent event){
         if (null == context){
             return;
         }
@@ -52,7 +53,7 @@ public class MarkViewGroup extends FrameLayout {
         if (null == motionEvents){
            motionEvents = new ArrayList<>();
         }
-        motionEvents.add(new TouchEvent(event.getX(),event.getY(),event.getAction()));
+        motionEvents.add(new TouchEvent(event.getX(),event.getY(),event.getAction(),event.getEventTime(),event.getDownTime()));
         mMotionEvents.put(context,motionEvents);
 
         OperatePath.getInstance().getConcurrentHashMap().put(context, this);
