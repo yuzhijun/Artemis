@@ -49,6 +49,22 @@ public class ExampleInstrumentedTest extends ActivityInstrumentationTestCase2<Ma
         getInstrumentation().sendPointerSync(event3);
         getInstrumentation().sendPointerSync(event4);
 
+
+        Sleeper.sleep(2000);
+
+        MotionEvent event5 = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_DOWN, 503.53375f, 1035.4607f, 0);
+
+        MotionEvent event6 = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_MOVE, 503.53375f, 1035.4607f, 0);
+
+        MotionEvent event7 = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_UP, 503.53375f, 1035.4607f, 0);
+
+        getInstrumentation().sendPointerSync(event5);
+        getInstrumentation().sendPointerSync(event6);
+        getInstrumentation().sendPointerSync(event7);
+
         Sleeper.sleep(2000);
     }
 

@@ -39,7 +39,6 @@ public class MarkViewGroup extends FrameLayout {
         return super.dispatchTouchEvent(ev);
     }
 
-
     private void handleMotionEvent(AppCompatActivity context, MotionEvent event){
         if (null == context){
             return;
