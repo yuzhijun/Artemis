@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
@@ -35,11 +36,20 @@ public class MarkViewGroup extends FrameLayout {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        handleMotionEvent(mWeakReference.get(),ev);
+        handleMotionEvent(mWeakReference.get(),ev,null);
         return super.dispatchTouchEvent(ev);
     }
 
-    private void handleMotionEvent(AppCompatActivity context, MotionEvent event){
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() ==  KeyEvent.KEYCODE_BACK){
+            handleMotionEvent(mWeakReference.get(),null,event);
+            mWeakReference.get().finish();
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    private void handleMotionEvent(AppCompatActivity context, MotionEvent event, KeyEvent keyEvent){
         if (null == context){
             return;
         }
@@ -52,7 +62,13 @@ public class MarkViewGroup extends FrameLayout {
         if (null == motionEvents){
            motionEvents = new ArrayList<>();
         }
-        motionEvents.add(new TouchEvent(event.getX(),event.getY(),event.getAction(),event.getEventTime(),event.getDownTime()));
+
+        if (null != event){
+            motionEvents.add(new TouchEvent(event.getX(),event.getY(),event.getAction(),event.getEventTime(),event.getDownTime()));
+        }else{
+            motionEvents.add(new TouchEvent(new TouchEvent.KeyBackEvent(keyEvent.getDeviceId(),keyEvent.getSource(),keyEvent.getMetaState(),keyEvent.getAction(),
+                    keyEvent.getKeyCode(),keyEvent.getScanCode(),keyEvent.getRepeatCount(),keyEvent.getFlags(),keyEvent.getDownTime(),keyEvent.getEventTime())));
+        }
         mMotionEvents.put(context,motionEvents);
 
         OperatePath.getInstance().getConcurrentHashMap().put(context, this);

@@ -14,11 +14,8 @@ import android.view.WindowManager;
 
 import com.winning.artemis_guard.model.TouchEvent;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,7 +23,7 @@ import static android.content.Context.WINDOW_SERVICE;
 
 public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCallbacks,IDisposable {
     private static volatile ArtemisActivityLifecycle sInstance = null;
-//    private InflaterDelegateFactory inflaterDelegateFactory;
+    private InflaterDelegateFactory inflaterDelegateFactory;
 
     private WeakHashMap<Activity, InflaterDelegateFactory> mInflaterDelegateMap;
     private ConcurrentHashMap<AppCompatActivity,List<View>> mViewHashMap;
@@ -51,7 +48,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        if (activity instanceof AppCompatActivity){
+//        if (activity instanceof AppCompatActivity){
 //            LayoutInflater layoutInflater = activity.getLayoutInflater();
 //            try {
 //                Field field = LayoutInflater.class.getDeclaredField("mFactorySet");
@@ -63,7 +60,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
 //                e.printStackTrace();
 //            }
             showFloatingView(activity);
-        }
+//        }
     }
 
     @Override
@@ -110,13 +107,15 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
     }
 
     private void recordOperatePath(Activity activity) {
-        LinkedHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap = OperatePath.getInstance().getConcurrentHashMap();
+        LinkedHashMap<AppCompatActivity,MarkViewGroup> markViewGroupHashMap =OperatePath.getInstance().getConcurrentHashMap();
             if (null != markViewGroupHashMap && markViewGroupHashMap.size() > 0){
                 MarkViewGroup markViewGroup = markViewGroupHashMap.get(activity);
                 if (null != markViewGroup){
-                    LinkedHashMap<AppCompatActivity,List<TouchEvent>> motionEvents = markViewGroup.getMotionEvents();
+                    LinkedHashMap<AppCompatActivity,List<TouchEvent>> motionEvents =  cloneList(markViewGroup.getMotionEvents());
                     if (null != motionEvents && motionEvents.size() > 0){
                         OperatePath.getInstance().getMapQueue().offer(motionEvents);
+
+                        markViewGroup.getMotionEvents().clear();
                     }
                 }
             }
@@ -133,28 +132,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         mInflaterDelegateMap = null;
     }
 
-    /**
-     * Parse the activity parameters.
-     * @param activity activity
-     * @return HashMap
-     */
-    private static Map<String, Object> parseIntent(Activity activity){
-        Map<String, Object> hashMap = new HashMap<>();
-        if (activity == null)return hashMap;
-        android.content.Intent intent = activity.getIntent();
-        if (intent != null) {
-            Bundle bundle = intent.getExtras();
-            if (bundle != null) {
-                Set<String> stringSet = bundle.keySet();
-                for(String s: stringSet){
-                    hashMap.put(s, bundle.get(s));
-                }
-            }
-        }
-        return hashMap;
-    }
-
-    public void showFloatingView(Activity activity) {
+    private void showFloatingView(Activity activity) {
         if (Build.VERSION.SDK_INT >= 23) {
             if (Settings.canDrawOverlays(activity)) {
                 showFloatView(activity);
@@ -171,14 +149,24 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         WindowManager windowManager = (WindowManager) activity.getSystemService(WINDOW_SERVICE);
         MarkViewGroup floatView = new MarkViewGroup(activity);
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.type = WindowManager.LayoutParams.TYPE_PHONE;
+        params.type = WindowManager.LayoutParams.TYPE_TOAST;
         params.format = PixelFormat.RGBA_8888;
-        params.gravity = Gravity.LEFT | Gravity.TOP;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+        params.gravity = Gravity.START | Gravity.TOP;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         params.width = 1;
         params.height = 1;
         params.x = 0;
         params.y = 0;
         windowManager.addView(floatView, params);
+    }
+
+    private static <T,E> LinkedHashMap<T,E> cloneList(LinkedHashMap<T,E> originList) {
+        LinkedHashMap<T,E> dest = new LinkedHashMap<>();
+        if (originList == null || originList.isEmpty()) {
+            return dest;
+        }
+
+        dest.putAll(originList);
+        return dest;
     }
 }
