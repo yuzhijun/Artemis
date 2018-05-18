@@ -44,13 +44,6 @@ public class InflaterDelegateFactory implements LayoutInflaterFactory {
             }
             mViews.add(view);
             mArtemisActivityLifecycle.getViewHashMap().put(mAppCompatActivity, mViews);
-
-            if (mViews.size() == 1){
-                MarkViewGroup markViewGroup = new MarkViewGroup(mAppCompatActivity);
-                markViewGroup.addView(view);
-
-                return markViewGroup;
-            }
         }
 
         return  view;

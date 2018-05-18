@@ -42,7 +42,7 @@ public class MarkViewGroup extends FrameLayout {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() ==  KeyEvent.KEYCODE_BACK){
+        if (event.getKeyCode() ==  KeyEvent.KEYCODE_BACK){
             handleMotionEvent(mWeakReference.get(),null,event);
             mWeakReference.get().finish();
         }

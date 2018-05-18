@@ -7,13 +7,16 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 
 import com.winning.artemis_guard.model.TouchEvent;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.WeakHashMap;
@@ -48,19 +51,19 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-//        if (activity instanceof AppCompatActivity){
-//            LayoutInflater layoutInflater = activity.getLayoutInflater();
-//            try {
-//                Field field = LayoutInflater.class.getDeclaredField("mFactorySet");
-//                field.setAccessible(true);
-//                field.setBoolean(layoutInflater, false);
-//                inflaterDelegateFactory = getInflaterDelegate(ArtemisActivityLifecycle.this,(AppCompatActivity) activity);
-//                LayoutInflaterCompat.setFactory(activity.getLayoutInflater(), inflaterDelegateFactory);
-//            } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
-//                e.printStackTrace();
-//            }
-            showFloatingView(activity);
-//        }
+        if (activity instanceof AppCompatActivity){
+            LayoutInflater layoutInflater = activity.getLayoutInflater();
+            try {
+                Field field = LayoutInflater.class.getDeclaredField("mFactorySet");
+                field.setAccessible(true);
+                field.setBoolean(layoutInflater, false);
+                inflaterDelegateFactory = getInflaterDelegate(ArtemisActivityLifecycle.this,(AppCompatActivity) activity);
+                LayoutInflaterCompat.setFactory(activity.getLayoutInflater(), inflaterDelegateFactory);
+            } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        showFloatingView(activity);
     }
 
     @Override
@@ -114,7 +117,6 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
                     LinkedHashMap<AppCompatActivity,List<TouchEvent>> motionEvents =  cloneList(markViewGroup.getMotionEvents());
                     if (null != motionEvents && motionEvents.size() > 0){
                         OperatePath.getInstance().getMapQueue().offer(motionEvents);
-
                         markViewGroup.getMotionEvents().clear();
                     }
                 }
@@ -149,7 +151,7 @@ public class ArtemisActivityLifecycle implements Application.ActivityLifecycleCa
         WindowManager windowManager = (WindowManager) activity.getSystemService(WINDOW_SERVICE);
         MarkViewGroup floatView = new MarkViewGroup(activity);
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.type = WindowManager.LayoutParams.TYPE_TOAST;
+        params.type = WindowManager.LayoutParams.TYPE_PHONE;
         params.format = PixelFormat.RGBA_8888;
         params.gravity = Gravity.START | Gravity.TOP;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
