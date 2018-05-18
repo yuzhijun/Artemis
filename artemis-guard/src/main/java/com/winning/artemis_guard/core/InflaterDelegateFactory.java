@@ -44,6 +44,13 @@ public class InflaterDelegateFactory implements LayoutInflaterFactory {
             }
             mViews.add(view);
             mArtemisActivityLifecycle.getViewHashMap().put(mAppCompatActivity, mViews);
+
+            if (mViews.size() == 1){
+                HandlePathViewGroup handlePathViewGroup = new HandlePathViewGroup(mAppCompatActivity);
+                handlePathViewGroup.addView(view);
+
+                return handlePathViewGroup;
+            }
         }
 
         return  view;
